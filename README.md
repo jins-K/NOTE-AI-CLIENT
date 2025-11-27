@@ -71,3 +71,7 @@ export default defineConfig([
   },
 ])
 ```
+=======
+# NOTE-AI
+AI NOTE FEEDBACK
+
