@@ -8,3 +8,7 @@ export interface RegisterResponse {
     token: string; 
     isVerificationRequired?: boolean; 
 }
+
+export interface LoginResponse {
+    token: string;
+}
