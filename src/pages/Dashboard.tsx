@@ -1,8 +1,8 @@
-// /src/pages/Dashboard.tsx (UX 개선 및 정보 간소화 버전)
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useFeedback, type Feedback } from '../hooks/useFeedback'; // 메모 목록을 가져오는 훅
+import { noteService } from '../services/note.service';
+import { type Note } from '../types/note';
+// import { useFeedback, type Feedback } from '../hooks/useFeedback'; // 메모 목록을 가져오는 훅
 
 // 💡 시간 포맷팅을 위한 헬퍼 함수 (최신 수정 시간을 사용자가 보기 좋게 변환)
 const formatTime = (isoString: string | Date): string => {
@@ -18,10 +18,62 @@ const formatTime = (isoString: string | Date): string => {
 };
 
 const Dashboard: React.FC = () => {
-    const { data: feedbacks, isLoading, error } = useFeedback();
-    const observerTargetRef = useRef<HTMLDivElement>(null);
+    const [allNotes, setAllNotes] = useState<Note[]>([]);
+    const [page, setPage] = useState(1);
+    const [hasMore, setHasMore] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+
+    const observeTargetRef = useRef<HTMLDivElement>(null); // 바닥 감지용
+    const navigate = useNavigate();
+
+    // isLoading 은 상태값 , isFetching은 참조
+    const isFetching = useRef(false); // 실행 여부를 기억 (렌더링을 유발하지 않음)
+    // 3. 데이터 로드 함수
+    const fetchMoreNotes = useCallback(async() => {
+        if ( isLoading || isFetching.current || (allNotes.length > 0 && !hasMore)) return;
+        isFetching.current = true;
+        setIsLoading(true);
+        try { 
+            const response = await noteService.getNotes(page, 10);
+            const {notes, pagination } = response;
+            setAllNotes(prev => [...prev, ...notes]);
+
+            if (page >= pagination.totalPages) {
+                setHasMore(false);
+            } else {
+                setHasMore(true);
+                setPage(prev => prev + 1);
+            }
+        } catch (error) {
+            console.error('메모 목록 불러오기 실패:', error);
+        } finally {
+            setIsLoading(false);
+            isFetching.current = false;
+        }
+    }, [page, isLoading, hasMore]);
+
+
+    useEffect(() => {
+        fetchMoreNotes();
+
+    }, []); // 최초 로딩시 조회
     
-    const navigate = useNavigate(); 
+    useEffect(() => {
+        if (!hasMore || isLoading) return; 
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0].isIntersecting && !isLoading && hasMore) {
+                    fetchMoreNotes();
+                }
+            },
+            { threshold: 0.5 }
+        )
+        if (observeTargetRef.current) {
+            observer.observe(observeTargetRef.current);
+        }
+        return () => observer.disconnect();
+    }, [fetchMoreNotes, isLoading, hasMore])
+
 
     const handleCreateMemo = useCallback(() => {
         navigate('/workspace'); 
@@ -35,6 +87,8 @@ const Dashboard: React.FC = () => {
         navigate(`/workspace/${id}`); 
     }, [navigate]);
 
+
+    
     if (isLoading) {
         return (
             <div className="flex items-center justify-center min-h-screen bg-gray-900 text-white">
@@ -43,15 +97,15 @@ const Dashboard: React.FC = () => {
         );
     }
     
-    if (error) {
-         return (
-            <div className="flex items-center justify-center min-h-screen bg-gray-900 text-red-400">
-                <p>메모를 불러오는 중 오류가 발생했습니다: {error.message}</p>
-            </div>
-        );
-    }
+    // if (error) {
+    //      return (
+    //         <div className="flex items-center justify-center min-h-screen bg-gray-900 text-red-400">
+    //             <p>메모를 불러오는 중 오류가 발생했습니다: {error.message}</p>
+    //         </div>
+    //     );
+    // }
 
-    const allNotes = feedbacks || [];
+    // const allNotes = feedbacks || [];
 
     return (
         <div className="min-h-screen bg-gray-900 text-gray-100 p-4 sm:p-6 relative">
@@ -61,7 +115,7 @@ const Dashboard: React.FC = () => {
                 <header className="mb-8 border-b border-gray-700 pb-4">
                     <h1 className="text-4xl font-extrabold text-white tracking-tight flex items-center">
                         <svg className="w-8 h-8 mr-3 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
-                        나의 AI 메모 기록
+                        나의 메모 기록
                     </h1>
                     <p className="mt-1 text-xl text-gray-400">모든 아이디어와 AI 통찰을 한눈에 확인하세요.</p>
                 </header>
@@ -70,16 +124,17 @@ const Dashboard: React.FC = () => {
                 <section>
                     
                     {allNotes.length > 0 ? (
+                        <>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6"> 
-                            {allNotes.map((note: Feedback) => {
+                            {allNotes.map((note: Note) => {
                                 // 💡 [수정] 메모 내용 결정: AI 응답이 있으면 AI 응답을 우선 표시
-                                const displayMemo = note.answer && note.answer.trim().length > 0 ? note.answer : note.question;
+                                const displayMemo = note.content && note.content.trim().length > 0 ? note.content : note.content;
                                 
                                 // 💡 [추가] 메모 내용을 기반으로 제목 추출 (최대 30자)
                                 const title = displayMemo.substring(0, 30) + (displayMemo.length > 30 ? '...' : '');
                                 
                                 // 💡 [가정] Feedback 타입에 updated_at이 string | Date 타입으로 있다고 가정
-                                const lastUpdated = note.updated_at ? formatTime(note.updated_at) : '정보 없음';
+                                const lastUpdated = note.updatedAt ? formatTime(note.updatedAt) : '정보 없음';
 
                                 return (
                                     <div 
@@ -101,7 +156,7 @@ const Dashboard: React.FC = () => {
                                         {/* 2. 🔑 [수정] 메모 본문 (Line Clamp 3 유지) */}
                                         <div className="mb-4">
                                             <h3 className="text-sm font-semibold text-blue-400 uppercase tracking-wider">
-                                                {note.answer && note.answer.trim().length > 0 ? "AI 통찰" : "원본 메모"}
+                                                {note.content && note.content.trim().length > 0 ? "AI 통찰" : "원본 메모"}
                                             </h3>
                                             
                                             <p className="mt-1 whitespace-pre-wrap line-clamp-3 text-lg text-gray-200">
@@ -127,10 +182,28 @@ const Dashboard: React.FC = () => {
                                 );
                             })}
                         </div>
+                    
+                        <div 
+                            ref={observeTargetRef} 
+                            className="h-20 w-full flex items-center justify-center mt-10"
+                        >
+                            {isLoading && (
+                                <div className="flex items-center space-x-2 text-blue-400">
+                                    <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" />
+                                    <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce [animation-delay:0.2s]" />
+                                    <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce [animation-delay:0.4s]" />
+                                    <span className="text-sm font-medium">추가 메모를 불러오는 중...</span>
+                                </div>
+                            )}
+                            {!hasMore && allNotes.length > 0 && (
+                                <p className="text-gray-500 text-sm italic">모든 메모를 다 읽었습니다. ✨</p>
+                            )}
+                        </div>
+                        </>
                     ) : (
                         // 메모가 없을 경우
                         <div className="p-12 text-center bg-gray-800 border-2 border-dashed border-gray-700 rounded-xl">
-                            <p className="text-xl text-gray-400">아직 저장된 AI 메모가 없습니다.</p>
+                            <p className="text-xl text-gray-400">아직 저장된 메모가 없습니다.</p>
                             <p className="text-lg text-gray-500 mt-2 mb-6">메모 등록 화면으로 이동하여 새로운 아이디어를 기록해 보세요!</p>
                             <button 
                                 onClick={handleCreateMemo}
@@ -166,3 +239,5 @@ const Dashboard: React.FC = () => {
 };
 
 export default Dashboard;
+
+// JSX expression must have one parent element.

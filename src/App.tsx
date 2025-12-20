@@ -76,3 +76,19 @@ export default App;
 
 // 전역 상태값을 관리하는 방법
 // Context API + Hooks
+
+
+// React 컴포넌트 = Pascal Case (UserProfile.tsx)
+// Route, Page  = Pascal Case (Dashboard.tsx)
+
+// Service, Api = Dot separation / Camel Case  (member.service.ts / memberService)
+// custom hooks = use + CamelCase
+
+// utility , helper = Dot separation / Camel Case (formatUtils.ts / date.util.ts)
+
+// redux slices = Dot separation (cart.slice.ts)
+// dto, model, schema = Dot separation (cart.slice.ts)
+
+// type definition , interface = Dot separation / Types (apiTypes.ts)
+// config = Dot separation / Kebab-case (db-config.ts / db.config.ts)
+// test files = Dot separation / Kebab-case (db-config.ts / db.config.ts)

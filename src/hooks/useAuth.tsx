@@ -103,3 +103,14 @@ export const useAuth = () => {
 
 
 // JSX코드를 사용하는 곳은 확장자를 tsx, 타입스크립트만 사용하면 ts .. 컴파일에러 발생
+
+// 단일 책임원칙 , 인증상태의 중앙 집중화, 상태변경로직은 캡슐화되고 외부에서 접근 불가하며 제공하는 함수로만 가능
+
+// Context == 저장소, 인터페이스를 정의한다
+// Provider == 데이터 공급, 실제 값을 제공하는 Context의 하위 컴포넌트,  .value로 생성한 것을 전달한다.
+// Consumer == 소비자, useContext 훅을 사용한다.
+
+// 상태관리
+// local state (useState , useReducer)
+// Context
+// redux, zustand, recoil

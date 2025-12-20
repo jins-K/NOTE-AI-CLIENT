@@ -6,7 +6,6 @@ import { useAuth } from '../hooks/useAuth';
 const Navbar: React.FC = () => {
   // 💡 [추가] useAuth 훅을 사용하여 로그인 상태와 로그아웃 함수를 가져옵니다.
   const { isAuthenticated, logout } = useAuth();
-console.log("Navbar Rerendering. isAuthenticated:", isAuthenticated);
   return (
     <nav className="bg-gray-900 border-b border-gray-800 px-4 py-4 shadow-2xl shadow-black/70 transition-colors duration-300">
       <div className="max-w-5xl mx-auto flex items-center justify-between">

@@ -1,7 +1,8 @@
 // /src/components/NoteCreator.tsx
 
-import React, { useState, useRef, useEffect, useCallback } from 'react';
-
+import React, { useState, useRef, useEffect, useCallback, type CSSProperties } from 'react';
+import { noteService } from '../services/note.service';
+import { useNavigate } from 'react-router-dom';
 interface NoteCreatorProps {
     onCreateNote: (noteContent: string) => Promise<void>;
     isSubmitting: boolean; 
@@ -15,7 +16,7 @@ const PADDING_TOP_PX = 12; // ⬅️ 이 값이 패딩 크기입니다.
 const NoteCreator: React.FC<NoteCreatorProps> = ({ onCreateNote, isSubmitting }) => {
     const [newNote, setNewNote] = useState('');
     const textareaRef = useRef<HTMLTextAreaElement>(null); 
-
+    const nav = useNavigate();
     // === Textarea 높이 자동 조절 로직 (유지) ===
     const handleResizeHeight = useCallback(() => {
         if (textareaRef.current) {
@@ -40,9 +41,10 @@ const NoteCreator: React.FC<NoteCreatorProps> = ({ onCreateNote, isSubmitting })
     
     const handleSubmit = async () => {
         if (newNote.trim()) {
-            await onCreateNote(newNote.trim());
+            const res = await noteService.register(newNote.trim());
             setNewNote('');
-            setTimeout(handleResizeHeight, 0); 
+            setTimeout(handleResizeHeight, 0);
+            nav("/dashboard");
         }
     };
 
@@ -80,7 +82,7 @@ const NoteCreator: React.FC<NoteCreatorProps> = ({ onCreateNote, isSubmitting })
                 // 💡 [수정] border 클래스 제거 및 shadow-lg 클래스 추가
                 className="w-full text-lg rounded-lg focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 resize-none shadow-lg" 
                 rows={1}
-                style={noteStyle} 
+                style={noteStyle as CSSProperties} 
                 placeholder="오늘의 아이디어를 자유롭게 메모하세요. AI가 핵심 통찰을 정리해 드립니다."
                 value={newNote}
                 onChange={handleChange} 

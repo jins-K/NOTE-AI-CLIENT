@@ -9,6 +9,7 @@ import NoteCreator from '../components/NoteCreator';
 const createNoteService = async (content: string) => {
     // 실제로는 /api/notes 엔드포인트에 content를 POST 요청하는 로직이 들어갑니다.
     // 임시로 1.5초 지연을 시뮬레이션합니다.
+    
     return new Promise<void>(resolve => setTimeout(resolve, 1500));
 };
 
@@ -29,7 +30,7 @@ const WorkSpace: React.FC = () => {
             refetch(); 
             
             // 3. 사용자 피드백 (성공 메시지 등)
-            alert('새로운 AI 메모가 성공적으로 생성되었습니다!');
+            alert('새로운 메모가 성공적으로 생성되었습니다!');
         } catch (error) {
             console.error('메모 생성 실패:', error);
             alert('메모 생성 중 오류가 발생했습니다.');
@@ -70,7 +71,7 @@ const WorkSpace: React.FC = () => {
 
                 {/* === 3. 메모 목록 영역 === */}
                 <section>
-                    <h2 className="text-2xl font-semibold mb-6 text-white border-b border-gray-700 pb-2">📚 최근 AI 메모 기록</h2>
+                    <h2 className="text-2xl font-semibold mb-6 text-white border-b border-gray-700 pb-2">📚 최근 메모 기록</h2>
                     
                     <div className="space-y-6">
                         {feedbacks && feedbacks.length > 0 ? (
@@ -98,7 +99,7 @@ const WorkSpace: React.FC = () => {
                         ) : (
                             // 메모가 없을 경우
                             <div className="p-8 text-center bg-gray-800 border-2 border-dashed border-gray-700 rounded-xl">
-                                <p className="text-lg text-gray-400">아직 저장된 AI 메모가 없습니다.</p>
+                                <p className="text-lg text-gray-400">아직 저장된 메모가 없습니다.</p>
                                 <p className="text-base text-gray-500 mt-2">위의 입력창에 메모를 남겨 첫 통찰을 얻어보세요!</p>
                             </div>
                         )}

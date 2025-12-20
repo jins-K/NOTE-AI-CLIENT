@@ -3,18 +3,16 @@ import Card from '../components/Card';
 import Input from '../components/Input';
 import Button from '../components/Button';
 import ToastMessage from '../components/ToastMessage'; 
-import { authService } from '../services/auth.service';
+import { memberService } from '../services/member.service';
 import { useNavigate } from 'react-router-dom';
-import type { RegisterResponse } from '../types/auth'; // 💡 타입 사용을 위해 import 가정
+import type { MemberRegisterResponse } from '../types/member'; // 💡 타입 사용을 위해 import 가정
 
 const Register: React.FC = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
-    // isRegistered 상태를 복원하여 이메일 인증 안내 화면에 사용합니다.
-    const [isRegistered, setIsRegistered] = useState(false); 
+    // const [isRegistered, setIsRegistered] = useState(false); 
     const nav = useNavigate();
-
     const handleCloseToast = () => setError(''); 
 
     const validate = (): boolean => {
@@ -40,18 +38,14 @@ const Register: React.FC = () => {
         }
 
         try {
-            // 💡 [수정] 서버 응답 타입 명시
-            const response: RegisterResponse = await authService.register(email, password);
             
-            // 즉시 로그인 정책일 경우
-            if (response.token) {
-                localStorage.setItem('authToken', response.token);
-                nav('/dashboard');
-            } 
-            // 이메일 인증 정책일 경우 (토큰이 없거나 isVerificationRequired 플래그가 있는 경우)
-            else if (response.isVerificationRequired || !response.token) {
-                setIsRegistered(true); // 인증 안내 화면 표시
-            }
+            // 💡 [수정] 서버 응답 타입 명시
+            const response: MemberRegisterResponse = await memberService.register({
+                email: email, 
+                password: password
+            });
+            nav('/login');
+            
             
         } catch (e: any) {
             // 서버 측 에러 처리
@@ -60,32 +54,32 @@ const Register: React.FC = () => {
         }
     }
 
-    // 💡 [복원 및 디자인 적용] 이메일 인증 안내 화면
-    if (isRegistered) {
-        return (
-            <div className="min-h-screen w-full flex items-center justify-center bg-gray-900 px-4">
-                <div className="w-full max-w-sm md:max-w-md animate-fade-in-up">
-                    <Card 
-                        title="" 
-                        className="p-10 md:p-12 bg-gray-800 shadow-xl shadow-black/40 rounded-xl border border-gray-700"
-                    >
-                        <h2 className="text-3xl font-light text-blue-400 mb-2 tracking-widest uppercase">
-                            AI Note
-                        </h2>
-                        <p className="text-xl font-bold text-gray-200 mb-8">
-                            등록 완료
-                        </p>
-                        <p className="mt-4 text-gray-400 leading-relaxed">
-                            가입하신 이메일 (<strong>{email}</strong>)을 확인하여 인증 링크를 클릭해 주세요.
-                        </p>
-                        <Button onClick={() => nav('/login')} className="mt-8 w-full text-lg bg-blue-700/80 hover:bg-blue-600 transition-all duration-150 font-semibold">
-                            로그인 페이지로 이동
-                        </Button>
-                    </Card>
-                </div>
-            </div>
-        );
-    }
+    // 이메일 인증 안내 화면
+    // if (isRegistered) {
+    //     return (
+    //         <div className="min-h-screen w-full flex items-center justify-center bg-gray-900 px-4">
+    //             <div className="w-full max-w-sm md:max-w-md animate-fade-in-up">
+    //                 <Card 
+    //                     title="" 
+    //                     className="p-10 md:p-12 bg-gray-800 shadow-xl shadow-black/40 rounded-xl border border-gray-700"
+    //                 >
+    //                     <h2 className="text-3xl font-light text-blue-400 mb-2 tracking-widest uppercase">
+    //                         AI Note
+    //                     </h2>
+    //                     <p className="text-xl font-bold text-gray-200 mb-8">
+    //                         등록 완료
+    //                     </p>
+    //                     <p className="mt-4 text-gray-400 leading-relaxed">
+    //                         가입하신 이메일 (<strong>{email}</strong>)을 확인하여 인증 링크를 클릭해 주세요.
+    //                     </p>
+    //                     <Button onClick={() => nav('/login')} className="mt-8 w-full text-lg bg-blue-700/80 hover:bg-blue-600 transition-all duration-150 font-semibold">
+    //                         로그인 페이지로 이동
+    //                     </Button>
+    //                 </Card>
+    //             </div>
+    //         </div>
+    //     );
+    // }
 
     // 💡 [디자인 적용] 회원가입 폼
     return (

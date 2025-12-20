@@ -5,6 +5,7 @@ export interface Feedback {
     question: string;
     answer: string;
     createdAt: string;
+    updatedAt?: string;
 }
 
 
