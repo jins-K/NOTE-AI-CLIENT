@@ -2,242 +2,178 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { noteService } from '../services/note.service';
 import { type Note } from '../types/note';
-// import { useFeedback, type Feedback } from '../hooks/useFeedback'; // 메모 목록을 가져오는 훅
 
-// 💡 시간 포맷팅을 위한 헬퍼 함수 (최신 수정 시간을 사용자가 보기 좋게 변환)
+// 시간 포맷 함수 (기존 동일)
 const formatTime = (isoString: string | Date): string => {
     if (!isoString) return '날짜 정보 없음';
-    // ISO String을 Date 객체로 변환하여 로컬 시간으로 포맷팅
     return new Date(isoString).toLocaleString('ko-KR', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
+        year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit',
     });
 };
 
 const Dashboard: React.FC = () => {
     const [allNotes, setAllNotes] = useState<Note[]>([]);
+    const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid'); // 💡 레이아웃 상태 추가
     const [page, setPage] = useState(1);
     const [hasMore, setHasMore] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
 
-    const observeTargetRef = useRef<HTMLDivElement>(null); // 바닥 감지용
+    const observeTargetRef = useRef<HTMLDivElement>(null);
     const navigate = useNavigate();
+    const isFetching = useRef(false);
 
-    // isLoading 은 상태값 , isFetching은 참조
-    const isFetching = useRef(false); // 실행 여부를 기억 (렌더링을 유발하지 않음)
-    // 3. 데이터 로드 함수
+    // 데이터 페칭 로직 (기존 동일)
     const fetchMoreNotes = useCallback(async() => {
-        if ( isLoading || isFetching.current || (allNotes.length > 0 && !hasMore)) return;
+        if (isLoading || isFetching.current || (allNotes.length > 0 && !hasMore)) return;
         isFetching.current = true;
         setIsLoading(true);
         try { 
             const response = await noteService.getNotes(page, 10);
-            const {notes, pagination } = response;
+            const { notes, pagination } = response;
             setAllNotes(prev => [...prev, ...notes]);
-
-            if (page >= pagination.totalPages) {
-                setHasMore(false);
-            } else {
-                setHasMore(true);
-                setPage(prev => prev + 1);
-            }
+            setHasMore(page < pagination.totalPages);
+            if (page < pagination.totalPages) setPage(prev => prev + 1);
         } catch (error) {
             console.error('메모 목록 불러오기 실패:', error);
         } finally {
             setIsLoading(false);
             isFetching.current = false;
         }
-    }, [page, isLoading, hasMore]);
+    }, [page, isLoading, hasMore, allNotes.length]);
 
-
-    useEffect(() => {
-        fetchMoreNotes();
-
-    }, []); // 최초 로딩시 조회
+    useEffect(() => { fetchMoreNotes(); }, []);
     
     useEffect(() => {
         if (!hasMore || isLoading) return; 
         const observer = new IntersectionObserver(
-            (entries) => {
-                if (entries[0].isIntersecting && !isLoading && hasMore) {
-                    fetchMoreNotes();
-                }
-            },
+            (entries) => { if (entries[0].isIntersecting) fetchMoreNotes(); },
             { threshold: 0.5 }
         )
-        if (observeTargetRef.current) {
-            observer.observe(observeTargetRef.current);
-        }
+        if (observeTargetRef.current) observer.observe(observeTargetRef.current);
         return () => observer.disconnect();
-    }, [fetchMoreNotes, isLoading, hasMore])
-
-
-    const handleCreateMemo = useCallback(() => {
-        navigate('/workspace'); 
-    }, [navigate]);
-
-    const handleViewDetail = useCallback((id: string) => {
-        navigate(`/feedback/${id}`); 
-    }, [navigate]);
-    
-    const handleEditMemo = useCallback((id: string) => {
-        navigate(`/workspace/${id}`); 
-    }, [navigate]);
-
-
-    
-    if (isLoading) {
-        return (
-            <div className="flex items-center justify-center min-h-screen bg-gray-900 text-white">
-                <span className="ml-3 text-lg">메모 기록을 불러오는 중...</span>
-            </div>
-        );
-    }
-    
-    // if (error) {
-    //      return (
-    //         <div className="flex items-center justify-center min-h-screen bg-gray-900 text-red-400">
-    //             <p>메모를 불러오는 중 오류가 발생했습니다: {error.message}</p>
-    //         </div>
-    //     );
-    // }
-
-    // const allNotes = feedbacks || [];
+    }, [fetchMoreNotes, isLoading, hasMore]);
 
     return (
         <div className="min-h-screen bg-gray-900 text-gray-100 p-4 sm:p-6 relative">
             <div className="max-w-5xl mx-auto">
                 
-                {/* === 1. 대시보드 헤더 === */}
-                <header className="mb-8 border-b border-gray-700 pb-4">
-                    <h1 className="text-4xl font-extrabold text-white tracking-tight flex items-center">
-                        <svg className="w-8 h-8 mr-3 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                {/* 헤더 섹션: 타이틀 + 레이아웃 토글 */}
+                <header className="mb-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-800 pb-8">
+                    <h1 className="text-2xl font-bold text-gray-200 tracking-tight flex items-center">
+                        <span className="w-1.5 h-7 bg-cyan-600 rounded-full mr-4 shadow-[0_0_15px_rgba(37,99,235,0.3)]"></span>
                         나의 메모 기록
                     </h1>
-                    <p className="mt-1 text-xl text-gray-400">모든 아이디어와 AI 통찰을 한눈에 확인하세요.</p>
+
+                    {/* 💡 레이아웃 전환 컨트롤 UI: 배경을 더 어둡게(bg-gray-950/50) 설정하여 음각 느낌 부여 */}
+                    <div className="flex bg-gray-950/50 p-1.5 rounded-2xl border border-gray-800 shadow-inner self-start">
+                        <button 
+                            onClick={() => setViewMode('grid')}
+                            className={`flex items-center px-4 py-2 rounded-xl transition-all duration-200 focus:outline-none ${
+                                viewMode === 'grid' 
+                                ? 'bg-gray-700 text-blue-400 shadow-lg scale-100 ring-1 ring-gray-600'
+                                : 'bg-gray-900 text-gray-400 hover:text-gray-200 scale-95 opacity-70'
+                            }`}
+                        >
+                            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                            </svg>
+                            <span className="text-xs font-bold uppercase tracking-wider">Grid</span>
+                        </button>
+                        
+                        <button 
+                            onClick={() => setViewMode('list')}
+                            className={`flex items-center px-4 py-2 rounded-xl transition-all duration-200 focus:outline-none ${
+                                viewMode === 'list' 
+                                ? 'bg-gray-700 text-blue-400 shadow-lg scale-100 ring-1 ring-gray-600' // 선택된 상태
+                                : 'bg-gray-900 text-gray-400 hover:text-gray-200 scale-95 opacity-70' // 선택 안됨
+                            }`}
+                        >
+                            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+                            </svg>
+                            <span className="text-xs font-bold uppercase tracking-wider">List</span>
+                        </button>
+                    </div>
                 </header>
 
-                {/* === 2. 메모 목록 (Grid/Column Layout) === */}
                 <section>
-                    
                     {allNotes.length > 0 ? (
-                        <>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6"> 
+                        <div className={`${
+                            viewMode === 'grid' 
+                            ? 'columns-1 md:columns-2 gap-6 space-y-6' 
+                            : 'flex flex-col space-y-5'
+                        }`}> 
                             {allNotes.map((note: Note) => {
-                                // 💡 [수정] 메모 내용 결정: AI 응답이 있으면 AI 응답을 우선 표시
-                                const displayMemo = note.content && note.content.trim().length > 0 ? note.content : note.content;
-                                
-                                // 💡 [추가] 메모 내용을 기반으로 제목 추출 (최대 30자)
-                                const title = displayMemo.substring(0, 30) + (displayMemo.length > 30 ? '...' : '');
-                                
-                                // 💡 [가정] Feedback 타입에 updated_at이 string | Date 타입으로 있다고 가정
-                                const lastUpdated = note.updatedAt ? formatTime(note.updatedAt) : '정보 없음';
+                                // 날짜와 시간을 분리하여 표시하기 위한 처리
+                                const dateObj = new Date(note.updatedAt);
+                                const dateStr = dateObj.toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' });
+                                const timeStr = dateObj.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
 
                                 return (
                                     <div 
                                         key={note.id} 
-                                        className={`p-6 rounded-xl shadow-2xl transition-all duration-300 transform hover:scale-[1.01] bg-gray-800 border-2 border-gray-700 hover:border-blue-500/80 cursor-pointer`}
-                                        onClick={() => handleViewDetail(note.id)} // 💡 카드 클릭 시 상세 보기로 이동
+                                        onClick={() => navigate(`/note/${note.id}`)}
+                                        className={`relative break-inside-avoid rounded-2xl bg-gray-800/30 border border-gray-700/50 hover:border-blue-500/30 hover:bg-gray-800/40 shadow-xl transition-all duration-300 cursor-pointer flex overflow-hidden
+                                            ${viewMode === 'grid' 
+                                                ? 'flex-col p-7 max-h-[400px]' 
+                                                : 'flex-row items-start p-6 min-h-[110px] max-h-[400px]' 
+                                            }`}
                                     >
-                                        
-                                        {/* 1. 🔑 [수정] 제목 및 수정 시간 영역 */}
-                                        <div className="flex justify-between items-center mb-3 border-b border-gray-700 pb-3">
-                                            <h2 className="text-2xl font-bold text-white truncate w-3/4">
-                                                {title}
-                                            </h2>
-                                            <p className="text-xs text-gray-500 font-mono flex-shrink-0">
-                                                {lastUpdated}
+                                        {/* 💡 날짜/시간 영역: 리스트 모드에서 두 줄 배치 */}
+                                        <div className={`${
+                                            viewMode === 'grid' 
+                                            ? 'mb-4' 
+                                            : 'flex-shrink-0 w-24 sm:w-28 border-r border-gray-700/50 mr-6 pt-1'
+                                        }`}>
+                                            <div className={`${viewMode === 'grid' ? 'flex items-center space-x-2' : 'flex flex-col space-y-1'}`}>
+                                                {viewMode === 'grid' && <span className="w-1.5 h-1.5 rounded-full bg-cyan-500/60"></span>}
+                                                
+                                                {/* 날짜 */}
+                                                <span className={`font-mono ${viewMode === 'grid' ? 'text-[11px] text-cyan-200 font-medium' : 'text-[13px] text-cyan-200 font-medium'} tracking-tighter`}>
+                                                    {dateStr}
+                                                </span>
+                                                {/* 시간 (리스트 모드에서 강조) */}
+                                                <span className={`font-mono text-cyan-200 tracking-tighter ${viewMode === 'grid' ? 'text-[11px] ml-1' : 'text-[13px] text-cyan-200 font-medium'}`}>
+                                                    {timeStr}
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        {/* 본문 영역 */}
+                                        <div className="overflow-hidden flex-1">
+                                            <p className={`text-gray-300 leading-relaxed font-normal whitespace-pre-wrap 
+                                                ${viewMode === 'grid' 
+                                                    ? 'text-[15px] line-clamp-[11]' 
+                                                    : 'text-[15px] line-clamp-[12]' 
+                                                }`}>
+                                                {note.content}
                                             </p>
                                         </div>
 
-                                        {/* 2. 🔑 [수정] 메모 본문 (Line Clamp 3 유지) */}
-                                        <div className="mb-4">
-                                            <h3 className="text-sm font-semibold text-blue-400 uppercase tracking-wider">
-                                                {note.content && note.content.trim().length > 0 ? "AI 통찰" : "원본 메모"}
-                                            </h3>
-                                            
-                                            <p className="mt-1 whitespace-pre-wrap line-clamp-3 text-lg text-gray-200">
-                                                {displayMemo}
-                                            </p>
-                                        </div>
-                                        
-                                        {/* 3. 🔑 [수정] 버튼 영역 (수정 버튼만 남기고 상세 보기 기능은 카드 클릭에 할당) */}
-                                        <div className="mt-4 pt-4 border-t border-gray-700/50 flex justify-end">
-                                            
-                                            <button 
-                                                onClick={(e) => {
-                                                    e.stopPropagation(); // 💡 카드 클릭 이벤트가 전파되는 것을 막음
-                                                    handleEditMemo(note.id);
-                                                }} 
-                                                className="text-sm text-gray-400 hover:text-yellow-400 font-medium flex items-center" 
-                                            >
-                                                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
-                                                수정하기
-                                            </button>
-                                        </div>
+                                        {/* 하단 페이드 효과 (400px 근처에서 잘릴 때 자연스럽게 처리) */}
+                                        <div className="absolute bottom-0 left-0 w-full h-14 bg-gradient-to-t from-gray-900/80 via-gray-900/20 to-transparent rounded-b-2xl pointer-events-none" />
                                     </div>
                                 );
                             })}
                         </div>
-                    
-                        <div 
-                            ref={observeTargetRef} 
-                            className="h-20 w-full flex items-center justify-center mt-10"
-                        >
-                            {isLoading && (
-                                <div className="flex items-center space-x-2 text-blue-400">
-                                    <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" />
-                                    <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce [animation-delay:0.2s]" />
-                                    <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce [animation-delay:0.4s]" />
-                                    <span className="text-sm font-medium">추가 메모를 불러오는 중...</span>
-                                </div>
-                            )}
-                            {!hasMore && allNotes.length > 0 && (
-                                <p className="text-gray-500 text-sm italic">모든 메모를 다 읽었습니다. ✨</p>
-                            )}
-                        </div>
-                        </>
                     ) : (
-                        // 메모가 없을 경우
-                        <div className="p-12 text-center bg-gray-800 border-2 border-dashed border-gray-700 rounded-xl">
-                            <p className="text-xl text-gray-400">아직 저장된 메모가 없습니다.</p>
-                            <p className="text-lg text-gray-500 mt-2 mb-6">메모 등록 화면으로 이동하여 새로운 아이디어를 기록해 보세요!</p>
-                            <button 
-                                onClick={handleCreateMemo}
-                                className="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition duration-150"
-                            >
-                                + 새 아이디어 기록 시작하기
-                            </button>
+                        <div className="flex flex-col items-center justify-center mt-20">
+                            <svg className="w-16 h-16 text-gray-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5l2 2h5a2 2 0 012 2v12a2 2 0 01-2 2z" />
+                            </svg>
+                            <p className="text-gray-500">아직 작성된 메모가 없습니다. 아래 버튼을 눌러 첫 메모를 작성해보세요!</p>
                         </div>
                     )}
+                    <div ref={observeTargetRef} className="h-20 w-full mt-10" />
                 </section>
-
             </div>
 
-            {/* 🔑 플로팅 액션 버튼 (FAB) - 새 메모 생성용 */}
-            <button
-                onClick={handleCreateMemo}
-                className="fixed bottom-8 right-8 
-                           bg-blue-600 hover:bg-blue-700 
-                           text-white font-bold 
-                           p-4 rounded-full shadow-2xl 
-                           transition duration-150 ease-in-out 
-                           flex items-center space-x-2 z-50 
-                           focus:outline-none focus:ring-4 focus:ring-blue-500/50"
-                aria-label="새 메모 등록"
-                title="새 메모 등록"
-            >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                </svg>
+            {/* FAB */}
+            <button onClick={() => navigate('/workspace')} className="fixed bottom-10 right-10 bg-blue-600 hover:bg-blue-500 text-white p-4 rounded-full shadow-2xl z-50 transition-transform hover:scale-110 active:scale-95">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
             </button>
         </div>
     );
 };
 
 export default Dashboard;
-
-// JSX expression must have one parent element.

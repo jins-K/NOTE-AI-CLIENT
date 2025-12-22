@@ -7,7 +7,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 // Dashboard 대신 WorkSpace (메모 기록)를 사용한다고 가정합니다.
 import Dashboard from './pages/Dashboard'; 
-import FeedbackDetail from './pages/FeedbackDetail';
+import NoteDetail from './pages/NoteDetail';
 import Navbar from './components/Navbar';
 import LandingPage from './pages/LandingPage';
 import WorkSpace from './pages/WorkSpace';
@@ -56,13 +56,13 @@ const App: React.FC = () => {
         <Route path="/login" element={<RedirectOnAuth component={Login} mode="unauthenticated" />} />
         <Route path="/register" element={<RedirectOnAuth component={Register} mode="unauthenticated" />} />
         <Route path="/dashboard" element={<RedirectOnAuth component={Dashboard} mode="protected" />} />
-        
-        {/* WorkSpace는 메모 등록 페이지로 사용되므로, 로그인된 사용자만 접근하도록 보호하는 것이 좋습니다. */}
-        {/* WorkSpace와 Dashboard 경로를 명확히 구분하여 사용하세요. */}
+        {/* 1. 새 메모 기록 (ID 없음) */}
         <Route path="/workspace" element={<RedirectOnAuth component={WorkSpace} mode="protected" />} />
+        {/* 2. 기존 메모 수정 (ID 있음) */}
+        <Route path="/workspace/:id" element={<RedirectOnAuth component={WorkSpace} mode="protected" />} />
         <Route path="/dashboard" element={<RedirectOnAuth component={Dashboard} mode="protected" />} />
         
-        <Route path="/feedback/:id" element={<FeedbackDetail />} />
+        <Route path="/note/:id" element={<NoteDetail />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </div>

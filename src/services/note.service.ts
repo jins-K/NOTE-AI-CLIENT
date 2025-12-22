@@ -18,5 +18,14 @@ export const noteService = {
     getNote: async(id: string): Promise<NoteRegisterResponse> => {
         const res = await api.get(`/note/${id}`);
         return res.data;
-    }
+    },
+    
+    updateNote: async(id: string, content: string): Promise<NoteRegisterResponse> => {
+        const res = await api.put(`/note/${id}`, { content });
+        return res.data;
+    },
+
+    deleteNote: async(id: string): Promise<void> => {
+        await api.delete(`/note/${id}`);
+    }   
 }
