@@ -77,6 +77,37 @@ const WorkSpace: React.FC = () => {
 
     return (
         <div className="min-h-screen bg-gray-900 text-gray-100 p-4 sm:p-8 font-sans">
+            {/* 💡 추가할 AI 분석 로딩 오버레이 */}
+            {isLoading && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-gray-950/80 backdrop-blur-md">
+                    <div className="flex flex-col items-center">
+                        {/* 화려한 AI 로딩 애니메이션 */}
+                        <div className="relative w-24 h-24 mb-8">
+                            {/* 바깥 회전 테두리 */}
+                            <div className="absolute inset-0 border-4 border-blue-500/20 rounded-full"></div>
+                            <div className="absolute inset-0 border-4 border-t-blue-500 rounded-full animate-spin"></div>
+                            
+                            {/* 중앙 반짝이는 아이콘 */}
+                            <div className="absolute inset-0 flex items-center justify-center">
+                                <svg className="w-10 h-10 text-blue-400 animate-pulse" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.415 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" />
+                                </svg>
+                            </div>
+                        </div>
+                        
+                        <h2 className="text-2xl font-bold text-white mb-3">AI 분석 중</h2>
+                        <p className="text-gray-400 text-center leading-relaxed">
+                            메모의 핵심 내용을 파악하여<br/>
+                            <span className="text-blue-400 font-semibold">제목, 요약, 태그</span>를 생성하고 있습니다.
+                        </p>
+                        
+                        {/* 진행 상태 바 (선택 사항) */}
+                        <div className="w-64 h-1.5 bg-gray-800 rounded-full mt-8 overflow-hidden">
+                            <div className="h-full bg-blue-500 animate-infinite-loading origin-left"></div>
+                        </div>
+                    </div>
+                </div>
+            )}
             <div className="max-w-5xl mx-auto">
                 
                 {/* 1. 상단 바: 미니멀한 타이틀과 돌아가기 버튼 */}
