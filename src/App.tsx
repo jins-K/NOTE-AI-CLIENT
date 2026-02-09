@@ -5,29 +5,13 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
-// Dashboard 대신 WorkSpace (메모 기록)를 사용한다고 가정합니다.
 import Dashboard from './pages/Dashboard'; 
 import NoteDetail from './pages/NoteDetail';
 import Navbar from './components/Navbar';
 import LandingPage from './pages/LandingPage';
 import WorkSpace from './pages/WorkSpace';
-
-// 💡 [추가] useAuth 훅을 임포트합니다.
-import { useAuth } from './hooks/useAuth'; // 실제 경로에 맞게 수정해주세요. 
+import { useAuth } from './hooks/useAuth';
 import RedirectOnAuth from './components/RedirectOnAuth';
-
-// // 💡 [추가] 루트 경로 '/'에서 리다이렉트를 처리할 컴포넌트 정의
-// const RootRedirect: React.FC = () => {
-//     const { isAuthenticated } = useAuth();
-    
-//     // 🔑 로그인 상태면 즉시 /dashboard로 리다이렉트
-//     if (isAuthenticated) {
-//         return <Navigate to="/dashboard" replace />;
-//     }
-    
-//     // 🔑 로그아웃 상태면 LandingPage를 렌더링 (요청하신 대로)
-//     return <LandingPage />;
-// };
 
 const App: React.FC = () => {
   // 💡 [추가] useAuth 훅에서 인증 상태를 가져옵니다.

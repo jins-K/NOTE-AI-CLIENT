@@ -21,7 +21,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // 2. AuthProvider 컴포넌트 생성(상태 저장소)
-// 💡 [수정] Children prop의 구조 분해 할당 이름을 'children'으로 수정 (관례)
+// Children prop의 구조 분해 할당 이름을 'children' (관례)
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [isAuthChecking, setIsAuthChecking] = useState(false);
@@ -93,9 +93,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 };
 
 // 3. useAuth 훅 생성
+// useContext(react 내장 훅)로 AuthContext 접근)
 export const useAuth = () => {
     const context = useContext(AuthContext);
-    if(context === undefined) { // 💡 [수정] == 대신 === 사용 권장
+    if(context === undefined) {
         throw new Error('useAuth는 AuthProvider 내부에서 사용해야 합니다.');
     }
     return context;
@@ -114,3 +115,7 @@ export const useAuth = () => {
 // local state (useState , useReducer)
 // Context
 // redux, zustand, recoil
+
+// useState : unmount시 state 제거
+// useState 호출 순서대로 Fiber에서 값을 가져오는 방식으로 상태를 저장한 것을 유지한다
+// 컴포넌트 안에서만 사용되며 전달하려면 props drilling 해야한다
