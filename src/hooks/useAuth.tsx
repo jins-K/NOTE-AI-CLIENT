@@ -1,6 +1,6 @@
 import React , { useState, useEffect, useCallback, createContext, useContext, type ReactNode } from 'react';
 import { authService } from '../services/auth.service';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 /**
  * 전역 인증 상태, 로그인, 로그아웃 등의 기능을 제공
@@ -79,9 +79,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
     }, [navigate]);
 
+    const { pathname } = useLocation();
+
     useEffect(() => {
-        checkAuthStatus();
-    }, [checkAuthStatus]);
+        // 💡 로그인이 필요 없는 공개 경로 리스트
+        const publicPaths = ['/', '/login', '/register', '/demo'];
+
+        // 현재 경로가 공개 경로에 포함되어 있지 않을 때만 상태 확인
+        // 또는, 이미 인증되었다면 중복 확인 방지
+        if (!publicPaths.includes(pathname) && !isAuthenticated) {
+            checkAuthStatus();
+        }
+    }, [checkAuthStatus, pathname, isAuthenticated]);
 
     return (
         <AuthContext.Provider value={{
