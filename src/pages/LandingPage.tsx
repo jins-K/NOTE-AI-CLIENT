@@ -87,8 +87,8 @@ const LandingPage: React.FC = () => {
           <Button onClick={scrollToDemo} className="px-8 py-4 text-lg shadow-lg shadow-indigo-500/20">
             ⚡ 지금 바로 체험하기
           </Button> 
-          <Button variant="secondary" onClick={() => nav('/login')} className="px-8 py-4 text-lg">
-            로그인
+          <Button variant="secondary" onClick={() => nav('/register')} className="px-8 py-4 text-lg">
+            가입하기
           </Button>
         </div>
       </div>
