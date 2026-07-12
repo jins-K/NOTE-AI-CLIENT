@@ -52,9 +52,10 @@ const WorkSpace: React.FC = () => {
                 navigate(`/note/${id}`, { replace: true });
             } else {
                 // 2. [등록] 기존에 사용하시던 register 로직 복구
-                await noteService.register(content.trim());
+                const newNote = await noteService.register(content.trim());
                 alert('새로운 메모가 기록되었습니다.');
-                navigate('/dashboard');
+                // navigate('/dashboard');
+                navigate(`/note/${newNote.id}`, { replace: true });
             }
         } catch (error) {
             console.error('저장 실패:', error);
@@ -66,11 +67,12 @@ const WorkSpace: React.FC = () => {
 
     if (isLoading) {
         return (
-            <div className="flex items-center justify-center min-h-screen bg-gray-900">
-                <div className="text-indigo-400 font-medium animate-pulse flex flex-col items-center">
-                    <div className="w-12 h-12 border-4 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin mb-4"></div>
-                    기록을 불러오는 중...
-                </div>
+            <div className="flex items-center justify-center min-h-screen bg-gray-900 text-white">
+                <svg className="animate-spin h-8 w-8 text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span className="ml-3 text-lg">기록을 불러오는 중...</span>
             </div>
         );
     }
@@ -78,7 +80,7 @@ const WorkSpace: React.FC = () => {
     return (
         <div className="min-h-screen bg-gray-900 text-gray-100 p-4 sm:p-8 font-sans">
             {/* 💡 추가할 AI 분석 로딩 오버레이 */}
-            {isLoading && (
+            {isSubmitting && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center bg-gray-950/80 backdrop-blur-md">
                     <div className="flex flex-col items-center">
                         {/* 화려한 AI 로딩 애니메이션 */}
