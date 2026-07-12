@@ -13,6 +13,7 @@ const Dashboard: React.FC = () => {
     // 💡 신규 상태: 검색어 및 선택된 태그
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedTag, setSelectedTag] = useState<string | null>(null);
+    const [isTagsExpanded, setIsTagsExpanded] = useState(false); // 👈 추가: 태그 펼침 여부
 
     const observeTargetRef = useRef<HTMLDivElement>(null);
     const navigate = useNavigate();
@@ -236,24 +237,53 @@ const Dashboard: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* 💡 태그 필터 영역 */}
+                    {/* 💡 태그 필터 영역 (최초 30개 제한 및 더보기/접기 토글 적용) */}
                     <div className="flex flex-wrap gap-2 items-center">
                         <button
                             onClick={() => setSelectedTag(null)}
-                            className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all border ${!selectedTag ? 'bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-500/20' : 'bg-gray-800 border-gray-700 text-gray-500 hover:border-gray-600'}`}
+                            className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all border ${
+                                !selectedTag 
+                                ? 'bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-500/20' 
+                                : 'bg-gray-800 border-gray-700 text-gray-400 hover:border-gray-600'
+                            }`}
                         >
                             ALL
                         </button>
-                        {availableTags.map(tag => (
+                        
+                        {/* 💡 상태에 따라 30개만 자르거나 전체를 보여줌 */}
+                        {(isTagsExpanded ? availableTags : availableTags.slice(0, 30)).map(tag => (
                             <button
                                 key={tag}
                                 onClick={() => setSelectedTag(tag === selectedTag ? null : tag)}
-                                className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all border ${selectedTag === tag ? 'bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-500/20' : 'bg-gray-800 border-gray-700 text-gray-500 hover:border-gray-600'}`}
+                                className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all border ${
+                                    selectedTag === tag 
+                                    ? 'bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-500/20' 
+                                    : 'bg-gray-800 border-gray-700 text-gray-400 hover:border-gray-600'
+                                }`}
                             >
                                 #{tag}
                             </button>
                         ))}
+
+                        {/* 💡 태그가 30개보다 많을 때만 토글 버튼을 렌더링 */}
+                        {availableTags.length > 30 && (
+                            <button
+                                onClick={() => setIsTagsExpanded(!isTagsExpanded)}
+                                className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold bg-gray-950/40 border border-dashed border-gray-700 text-blue-400 hover:bg-gray-800 hover:text-blue-300 transition-all ml-1"
+                            >
+                                <span>{isTagsExpanded ? '접기' : `더보기 (+${availableTags.length - 30})`}</span>
+                                <svg 
+                                    className={`w-3 h-3 transition-transform duration-200 ${isTagsExpanded ? 'rotate-180' : ''}`} 
+                                    fill="none" 
+                                    stroke="currentColor" 
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </button>
+                        )}
                     </div>
+  
                 </header>
 
                 {/* 2. 필터링된 메모 리스트 영역 */}
