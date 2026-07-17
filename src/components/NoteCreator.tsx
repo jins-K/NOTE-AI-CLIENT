@@ -15,6 +15,9 @@ const NoteCreator: React.FC<NoteCreatorProps> = ({ onCreateNote, isSubmitting, i
     const textareaRef = useRef<HTMLTextAreaElement>(null); 
     const isEditMode = initialValue.length > 0;
 
+    // 💡 [추가] 비동기로 데이터가 로드되어 들어오는 '최초 1회'만 감지하기 위한 안전장치
+    const isInitialized = useRef(false);
+
     const handleResizeHeight = useCallback(() => {
         if (textareaRef.current) {
             textareaRef.current.style.height = 'auto'; 
@@ -25,14 +28,23 @@ const NoteCreator: React.FC<NoteCreatorProps> = ({ onCreateNote, isSubmitting, i
         }
     }, []);
 
+    // 💡 [수정] 부모(WorkSpace)로부터 비동기로 데이터가 뒤늦게 들어왔을 때 딱 "한 번만" 에디터에 주입합니다.
+    // 사용자가 한 글자라도 타이핑하기 시작한 이후에는 부모의 리렌더링에 영향을 받지 않습니다.
     useEffect(() => {
-        setNewNote(initialValue);
-        setTimeout(handleResizeHeight, 0);
+        if (initialValue && !isInitialized.current) {
+            setNewNote(initialValue);
+            isInitialized.current = true; // 주입 완료
+            setTimeout(handleResizeHeight, 0);
+        }
     }, [initialValue, handleResizeHeight]);
+
+    // 💡 입력 값 변경 및 초기 마운트 시 높이를 정밀하게 추적합니다.
+    useEffect(() => {
+        handleResizeHeight();
+    }, [newNote, handleResizeHeight]);
 
     const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         setNewNote(e.target.value);
-        handleResizeHeight();
     };
     
     const handleSubmit = async () => {
@@ -62,7 +74,6 @@ const NoteCreator: React.FC<NoteCreatorProps> = ({ onCreateNote, isSubmitting, i
     return (
         <section className="bg-gray-800/50 p-8 rounded-[32px] shadow-2xl mb-10 border border-gray-700/50 backdrop-blur-sm relative overflow-hidden">
             
-            {/* 💡 중복된 제목 대신 들어가는 아주 작은 모드 배지 */}
             <div className="flex justify-between items-center mb-6">
                 <div className="flex items-center space-x-2">
                     <span className={`w-1.5 h-1.5 rounded-full ${isEditMode ? 'bg-indigo-500' : 'bg-blue-500'} animate-pulse`} />

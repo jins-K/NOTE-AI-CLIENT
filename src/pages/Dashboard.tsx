@@ -51,16 +51,6 @@ const Dashboard: React.FC = () => {
         }
     };
 
-    // 💡 모든 메모에서 중복 없이 태그 추출
-    const availableTags = useMemo(() => {
-        const tagsSet = new Set<string>();
-        allNotes.forEach(note => {
-            if (Array.isArray(note.tags)) {
-                note.tags.forEach(tag => tagsSet.add(tag));
-            }
-        });
-        return Array.from(tagsSet);
-    }, [allNotes]);
 
     // 💡 실시간 필터링 로직 (RAG의 검색 엔진 역할)
     const filteredNotes = useMemo(() => {
@@ -75,6 +65,34 @@ const Dashboard: React.FC = () => {
             return matchesSearch && matchesTag;
         });
     }, [allNotes, searchQuery, selectedTag]);
+
+    // 💡 [수정] 필터링된 메모들의 태그만 동적으로 추출 + 검색 결과가 없으면 빈 배열 반환
+    const availableTags = useMemo(() => {
+        // 1. 검색 결과가 하나도 없다면 태그 목록을 완전히 비웁니다.
+        if (filteredNotes.length === 0) {
+            return [];
+        }
+
+        const tagsSet = new Set<string>();
+
+        if (searchQuery.trim().length > 0) {
+            // 2. 검색어가 입력되었을 때는 '현재 검색어로 필터링된 결과'에 포함된 태그들만 추출합니다.
+            filteredNotes.forEach(note => {
+                if (Array.isArray(note.tags)) {
+                    note.tags.forEach(tag => tagsSet.add(tag));
+                }
+            });
+        } else {
+            // 3. 검색어가 없을 때는 전체 메모(allNotes)에서 태그를 추출하여 초기 상태를 보여줍니다.
+            allNotes.forEach(note => {
+                if (Array.isArray(note.tags)) {
+                    note.tags.forEach(tag => tagsSet.add(tag));
+                }
+            });
+        }
+
+        return Array.from(tagsSet);
+    }, [allNotes, filteredNotes, searchQuery]); // 👈 최신 상태 동기화를 위해 디펜던시 추가
 
     // 데이터 페칭 로직 (기존 유지)
     const fetchMoreNotes = useCallback(async() => {
@@ -237,53 +255,54 @@ const Dashboard: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* 💡 태그 필터 영역 (최초 30개 제한 및 더보기/접기 토글 적용) */}
-                    <div className="flex flex-wrap gap-2 items-center">
-                        <button
-                            onClick={() => setSelectedTag(null)}
-                            className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all border ${
-                                !selectedTag 
-                                ? 'bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-500/20' 
-                                : 'bg-gray-800 border-gray-700 text-gray-400 hover:border-gray-600'
-                            }`}
-                        >
-                            ALL
-                        </button>
-                        
-                        {/* 💡 상태에 따라 30개만 자르거나 전체를 보여줌 */}
-                        {(isTagsExpanded ? availableTags : availableTags.slice(0, 30)).map(tag => (
+                    {availableTags.length > 0 && (
+                        /* 💡 태그 필터 영역 (최초 30개 제한 및 더보기/접기 토글 적용) */
+                        <div className="flex flex-wrap gap-2 items-center">
                             <button
-                                key={tag}
-                                onClick={() => setSelectedTag(tag === selectedTag ? null : tag)}
+                                onClick={() => setSelectedTag(null)}
                                 className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all border ${
-                                    selectedTag === tag 
+                                    !selectedTag 
                                     ? 'bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-500/20' 
                                     : 'bg-gray-800 border-gray-700 text-gray-400 hover:border-gray-600'
                                 }`}
                             >
-                                #{tag}
+                                ALL
                             </button>
-                        ))}
-
-                        {/* 💡 태그가 30개보다 많을 때만 토글 버튼을 렌더링 */}
-                        {availableTags.length > 30 && (
-                            <button
-                                onClick={() => setIsTagsExpanded(!isTagsExpanded)}
-                                className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold bg-gray-950/40 border border-dashed border-gray-700 text-blue-400 hover:bg-gray-800 hover:text-blue-300 transition-all ml-1"
-                            >
-                                <span>{isTagsExpanded ? '접기' : `더보기 (+${availableTags.length - 30})`}</span>
-                                <svg 
-                                    className={`w-3 h-3 transition-transform duration-200 ${isTagsExpanded ? 'rotate-180' : ''}`} 
-                                    fill="none" 
-                                    stroke="currentColor" 
-                                    viewBox="0 0 24 24"
+                            
+                            {/* 💡 상태에 따라 30개만 자르거나 전체를 보여줌 */}
+                            {(isTagsExpanded ? availableTags : availableTags.slice(0, 30)).map(tag => (
+                                <button
+                                    key={tag}
+                                    onClick={() => setSelectedTag(tag === selectedTag ? null : tag)}
+                                    className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all border ${
+                                        selectedTag === tag 
+                                        ? 'bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-500/20' 
+                                        : 'bg-gray-800 border-gray-700 text-gray-400 hover:border-gray-600'
+                                    }`}
                                 >
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" />
-                                </svg>
-                            </button>
-                        )}
-                    </div>
-  
+                                    #{tag}
+                                </button>
+                            ))}
+
+                            {/* 💡 태그가 30개보다 많을 때만 토글 버튼을 렌더링 */}
+                            {availableTags.length > 30 && (
+                                <button
+                                    onClick={() => setIsTagsExpanded(!isTagsExpanded)}
+                                    className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold bg-gray-950/40 border border-dashed border-gray-700 text-blue-400 hover:bg-gray-800 hover:text-blue-300 transition-all ml-1"
+                                >
+                                    <span>{isTagsExpanded ? '접기' : `더보기 (+${availableTags.length - 30})`}</span>
+                                    <svg 
+                                        className={`w-3 h-3 transition-transform duration-200 ${isTagsExpanded ? 'rotate-180' : ''}`} 
+                                        fill="none" 
+                                        stroke="currentColor" 
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </button>
+                            )}
+                        </div>
+                    )}
                 </header>
 
                 {/* 2. 필터링된 메모 리스트 영역 */}

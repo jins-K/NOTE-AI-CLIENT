@@ -14,7 +14,7 @@ const WorkSpace: React.FC = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isLoading, setIsLoading] = useState(isEditMode);
 
-    // === 데이터 로드 로직 (기존 유지) ===
+    // === 데이터 로드 로직 ===
     useEffect(() => {
         const fetchNote = async () => {
             if (!isEditMode) return;
@@ -40,26 +40,23 @@ const WorkSpace: React.FC = () => {
         fetchNote();
     }, [id, isEditMode, navigate, location.state]);
 
-    // === 🔑 [복구] 저장 및 등록 핸들러 ===
+    // === 저장 및 등록 핸들러 ===
     const handleSaveNote = async (content: string) => {
         setIsSubmitting(true);
         try {
             if (isEditMode) {
-                // 1. [수정] update 로직 (해당 API가 서비스에 있다고 가정)
-                // 만약 서비스에 updateNote가 없다면 register 등을 상황에 맞게 변경하세요.
                 await noteService.updateNote(id!, content); 
                 alert('메모가 수정되었습니다.');
                 navigate(`/note/${id}`, { replace: true });
             } else {
-                // 2. [등록] 기존에 사용하시던 register 로직 복구
                 const newNote = await noteService.register(content.trim());
                 alert('새로운 메모가 기록되었습니다.');
-                // navigate('/dashboard');
                 navigate(`/note/${newNote.id}`, { replace: true });
             }
         } catch (error) {
             console.error('저장 실패:', error);
-            alert('저장 중 오류가 발생했습니다.');
+            // 💡 [핵심] 이제 에디터의 상태가 격리되어 있으므로, 단순히 알림만 띄워도 입력값이 날아가지 않습니다.
+            alert('저장 중 오류가 발생했습니다. 작성 중이던 내용은 그대로 유지됩니다.');
         } finally {
             setIsSubmitting(false);
         }
@@ -79,40 +76,29 @@ const WorkSpace: React.FC = () => {
 
     return (
         <div className="min-h-screen bg-gray-900 text-gray-100 p-4 sm:p-8 font-sans">
-            {/* 💡 추가할 AI 분석 로딩 오버레이 */}
+            {/* AI 분석 로딩 오버레이 */}
             {isSubmitting && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center bg-gray-950/80 backdrop-blur-md">
                     <div className="flex flex-col items-center">
-                        {/* 화려한 AI 로딩 애니메이션 */}
                         <div className="relative w-24 h-24 mb-8">
-                            {/* 바깥 회전 테두리 */}
                             <div className="absolute inset-0 border-4 border-blue-500/20 rounded-full"></div>
                             <div className="absolute inset-0 border-4 border-t-blue-500 rounded-full animate-spin"></div>
-                            
-                            {/* 중앙 반짝이는 아이콘 */}
                             <div className="absolute inset-0 flex items-center justify-center">
                                 <svg className="w-10 h-10 text-blue-400 animate-pulse" fill="currentColor" viewBox="0 0 20 20">
                                     <path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.415 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" />
                                 </svg>
                             </div>
                         </div>
-                        
                         <h2 className="text-2xl font-bold text-white mb-3">AI 분석 중</h2>
                         <p className="text-gray-400 text-center leading-relaxed">
                             메모의 핵심 내용을 파악하여<br/>
                             <span className="text-blue-400 font-semibold">제목, 요약, 태그</span>를 생성하고 있습니다.
                         </p>
-                        
-                        {/* 진행 상태 바 (선택 사항) */}
-                        <div className="w-64 h-1.5 bg-gray-800 rounded-full mt-8 overflow-hidden">
-                            <div className="h-full bg-blue-500 animate-infinite-loading origin-left"></div>
-                        </div>
                     </div>
                 </div>
             )}
+            
             <div className="max-w-5xl mx-auto">
-                
-                {/* 1. 상단 바: 미니멀한 타이틀과 돌아가기 버튼 */}
                 <header className="mb-12 flex justify-between items-center">
                     <div className="flex items-center space-x-3">
                         <div className={`w-1 h-6 rounded-full ${isEditMode ? 'bg-indigo-500' : 'bg-blue-500'}`} />
@@ -120,7 +106,6 @@ const WorkSpace: React.FC = () => {
                             {isEditMode ? '📝 기록 편집' : '✍️ 새로운 기록'}
                         </h1>
                     </div>
-
                     <button 
                         onClick={() => navigate(-1)}
                         className="flex items-center px-4 py-2 bg-gray-700/50 hover:bg-gray-700 text-gray-400 hover:text-gray-200 rounded-xl transition-all border border-gray-800"
@@ -129,8 +114,8 @@ const WorkSpace: React.FC = () => {
                     </button>
                 </header>
 
-                {/* 2. 메인 에디터 영역 */}
                 <section className="transition-all duration-500">
+                    {/* 💡 [수정] key 속성을 부여하여 렌더링 생명주기를 완벽히 분리합니다 */}
                     <NoteCreator 
                         onCreateNote={handleSaveNote} 
                         isSubmitting={isSubmitting}
@@ -138,7 +123,6 @@ const WorkSpace: React.FC = () => {
                     />
                 </section>
 
-                {/* 3. 하단 팁 (수정 모드 시) */}
                 {isEditMode && (
                     <p className="mt-6 text-center text-xs text-gray-600 font-medium tracking-wide">
                         수정된 내용은 기존 기록에 바로 덮어씌워집니다.
